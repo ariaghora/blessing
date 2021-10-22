@@ -2,6 +2,7 @@ from typing import Any
 
 import numpy as np
 import torch
+from sklearn.preprocessing import MinMaxScaler
 from tqdm import tqdm
 
 
@@ -26,10 +27,17 @@ class Autoencoder(torch.nn.Module):
         return X_hat, z
 
 
-class Blessing:
-    def __init__(self, k: int, n_epoch: int = 2000, verbose: bool = True):
+class TorchBlessing:
+    def __init__(
+        self,
+        k: int,
+        max_iter: int = 200,
+        scale_input: bool = True,
+        verbose: bool = True,
+    ):
         self.k = k
-        self.n_epoch = n_epoch
+        self.max_iter = max_iter
+        self.scale_input = scale_input
         self.verbose = verbose
         self.ae: Autoencoder = None
         self.column_scores: np.ndarray = None
@@ -45,22 +53,25 @@ class Blessing:
         return X.float()
 
     def fit(self, X: np.ndarray):
+        if self.scale_input:
+            X = MinMaxScaler().fit_transform(X)
+
         self.ae = Autoencoder(n_feat=X.shape[1], k=self.k)
         X = self._ensure_float_tensor(X)
 
         mse = torch.nn.MSELoss()
         opt = torch.optim.Adam(self.ae.parameters())
-        for i in tqdm(range(self.n_epoch)):
+        for i in tqdm(range(self.max_iter)):
             opt.zero_grad()
             X_hat, z = self.ae(X)
             loss = mse(X_hat, X)
             loss.backward()
             opt.step()
-        col_mse = (X_hat.detach().numpy() - X.detach().numpy()) ** 2
-        self.column_scores = (col_mse).mean(0)
-        self.chosen_column_idx = np.argsort(self.column_scores)[: self.k]
+        col_mse = ((X_hat.detach().numpy() - X.detach().numpy()) ** 2).mean(0)
+        col_penalty = np.log(X.detach().numpy().var(0) + 1e-8)
+        self.col_scores = 1 / (col_mse - col_penalty)
+        self.chosen_column_idx = np.argsort(self.col_scores)[-self.k :][::-1]
         return self
 
     def transform(self, X: np.ndarray):
         return X[:, self.chosen_column_idx]
-
