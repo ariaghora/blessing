@@ -9,7 +9,7 @@ class BaseBaselineSelector:
 
 
 class SPECSelector(BaseBaselineSelector):
-    def __init__(self, k, style=0):
+    def __init__(self, k, style=-1):
         super().__init__(k)
         self.style = style
         self.scores = None
