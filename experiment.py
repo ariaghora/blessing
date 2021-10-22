@@ -157,18 +157,18 @@ def run_varying_noise(levels: list, selector_runners: list):
                 ),
             }
         )
+        print()
     return res
 
 
 if __name__ == "__main__":
     np.random.seed(42)  # for consistent result across machine ¯\_(ツ)_/¯
 
-    selector_runners = [run_skblessing, run_spec, run_boruta]
-    #selector_runners = [run_rfs]
+    selector_runners = [run_skblessing, run_rfs, run_spec, run_boruta]
 
     levels = [10, 50, 100, 500, 1000]
     res = run_varying_noise(levels=levels, selector_runners=selector_runners)
     with open("result/run_varying_noise.json", "w") as f:
         json.dump(res, f, indent=2)
 
-    run_experiment("MNIST", *load_mnist(), k=100, selector_runners=selector_runners)
+    # run_experiment("MNIST", *load_mnist(), k=100, selector_runners=selector_runners)
