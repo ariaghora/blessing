@@ -16,7 +16,7 @@ class Blessing:
         self.chosen_column_idx: np.ndarray = None
 
     def fit(self, X: np.ndarray):
-        """ 'Nudge' the values of constant columns """
+        """'Nudge' the values of constant columns"""
         X = X + (
             np.random.randn(*X.shape) * 10 ** (np.ceil(np.log10(np.abs(X) + 1e-8)) - 2)
         )
