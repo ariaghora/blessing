@@ -1,11 +1,28 @@
+import numpy as np
+from boruta import BorutaPy
 from skfeature.function.similarity_based import SPEC
-from skfeature.function.sparse_learning_based import RFS 
+from skfeature.function.sparse_learning_based import RFS
 from skfeature.utility.sparse_learning import feature_ranking
+from sklearn.ensemble import RandomForestClassifier
 
 
 class BaseBaselineSelector:
     def __init__(self, k):
         self.k = k
+
+
+class BorutaSelector(BaseBaselineSelector):
+    def __init__(self, k):
+        super().__init__(k)
+
+    def fit(self, X, y):
+        forest = RandomForestClassifier()
+        self.selector = BorutaPy(forest, n_estimators="auto")
+        self.selector.fit(X, y)
+        return self
+
+    def transform(self, X):
+        return X[:, np.argsort(self.selector.ranking_)[: self.k]]
 
 
 class SPECSelector(BaseBaselineSelector):
