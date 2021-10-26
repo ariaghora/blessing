@@ -15,7 +15,7 @@ class Blessing:
         self.column_scores: np.ndarray = None
         self.chosen_column_idx: np.ndarray = None
 
-    def fit(self, X: np.ndarray):
+    def fit(self, X: np.ndarray, n_refine: int = 3):
         """'Nudge' the values of constant columns"""
         X = X + (
             np.random.randn(*X.shape) * 10 ** (np.ceil(np.log10(np.abs(X) + 1e-8)) - 2)
@@ -24,11 +24,22 @@ class Blessing:
             X = MinMaxScaler().fit_transform(X)
 
         self.ae = MLPRegressor(
-            hidden_layer_sizes=self.hidden_layer_sizes, max_iter=self.max_iter
+            hidden_layer_sizes=self.hidden_layer_sizes,
+            max_iter=self.max_iter,
+            activation="identity",
         )
 
         self.ae.fit(X, X)
         X_hat = self.ae.predict(X)
+
+        """ Sample outlier removal """
+        row_mse = ((X_hat - X) ** 2).mean(1)
+        mu = row_mse.mean()
+        std = row_mse.std()
+        z = (row_mse - mu) / std
+        if n_refine > 0:
+            return self.fit(X[z <= 3], n_refine - 1)
+
         col_mse = ((X_hat - X) ** 2).mean(0)
         col_penalty = np.log(X.var(0) + 1e-8)
         self.col_scores = 1 / (col_mse - col_penalty)
