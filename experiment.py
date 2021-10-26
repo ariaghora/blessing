@@ -10,8 +10,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 
-from baselinewrapper import RFSSelector, SPECSelector, BorutaSelector
-from blessing import TorchBlessing as Blessing
+from baselinewrapper import *
+from blessing import TorchBlessing
 from skblessing import Blessing as SKBlessing
 
 
@@ -42,8 +42,22 @@ def load_iris_noise(n_noise: int):
     return dataset_split(X, y)
 
 
+def load_mat_dataset(path):
+    mat = scipy.io.loadmat(path)
+    X = mat["X"]
+    y = mat["Y"].ravel()
+    return dataset_split(X, y)
+
+
 def load_madelon():
     mat = scipy.io.loadmat("data/madelon.mat")
+    X = mat["X"]
+    y = mat["Y"].ravel()
+    return dataset_split(X, y)
+
+
+def load_basehock():
+    mat = scipy.io.loadmat("data/BASEHOCK.mat")
     X = mat["X"]
     y = mat["Y"].ravel()
     return dataset_split(X, y)
@@ -63,6 +77,13 @@ def load_mnist():
 def run_blessing(X_train: np.ndarray, y_train: np.ndarray, k: int):
     selector = Blessing(k)
     selector.fit(X_train)
+    return selector
+
+
+@timeit
+def run_torch_blessing(X_train: np.ndarray, y_train: np.ndarray, k: int):
+    selector = TorchBlessing(k)
+    selector.fit(X_train, y_train)
     return selector
 
 
@@ -88,8 +109,22 @@ def run_skblessing(X_train: np.ndarray, y_train: np.ndarray, k: int):
 
 
 @timeit
+def run_jelsr(X_train: np.ndarray, y_train: np.ndarray, k: int):
+    selector = JELSRSelector(k)
+    selector.fit(X_train)
+    return selector
+
+
+@timeit
 def run_boruta(X_train: np.ndarray, y_train: np.ndarray, k: int):
     selector = BorutaSelector(k)
+    selector.fit(X_train, y_train)
+    return selector
+
+
+@timeit
+def run_ndfs(X_train: np.ndarray, y_train: np.ndarray, k: int):
+    selector = NDFSSelector(k)
     selector.fit(X_train, y_train)
     return selector
 
@@ -106,6 +141,27 @@ def run_rfe(X_train: np.ndarray, y_train: np.ndarray, k: int):
 def run_rfs(X_train: np.ndarray, y_train: np.ndarray, k: int):
     selector = RFSSelector(k)
     selector.fit(X_train, y_train)
+    return selector
+
+
+@timeit
+def run_dlufs(X_train: np.ndarray, y_train: np.ndarray, k: int):
+    selector = DLUFSSelector(k)
+    selector.fit(X_train)
+    return selector
+
+
+@timeit
+def run_lapscore(X_train: np.ndarray, y_train: np.ndarray, k: int):
+    selector = LapScoreSelector(k)
+    selector.fit(X_train)
+    return selector
+
+
+@timeit
+def run_mcfs(X_train: np.ndarray, y_train: np.ndarray, k: int):
+    selector = MCFSSelector(k)
+    selector.fit(X_train)
     return selector
 
 
@@ -176,19 +232,35 @@ def run_varying_noise(levels: list, selector_runners: list):
 if __name__ == "__main__":
     np.random.seed(42)  # for consistent result across machine ¯\_(ツ)_/¯
 
-    selector_runners = [run_skblessing, run_rfs, run_spec, run_boruta]
-    selector_runners = [run_boruta, run_skblessing, run_select_k_best]
+    selector_runners = [run_skblessing, run_spec, run_lapscore, run_ndfs]
+    selector_runners = [run_skblessing, run_spec, run_lapscore, run_mcfs, run_ndfs]
+    selector_runners = [run_skblessing, run_spec, run_lapscore, run_mcfs]
 
-    madelon = load_madelon()
-    run_experiment("Madelon 50", *madelon, k=50, selector_runners=selector_runners)
-    run_experiment("Madelon 100", *madelon, k=100, selector_runners=selector_runners)
-    run_experiment("Madelon 150", *madelon, k=150, selector_runners=selector_runners)
-    run_experiment("Madelon 200", *madelon, k=200, selector_runners=selector_runners)
+    # lymphoma = load_mat_dataset("data/lymphoma.mat")
+    # run_experiment("Lymphoma 50", *lymphoma, k=50, selector_runners=selector_runners)
+    # run_experiment("Lymphoma 100", *lymphoma, k=100, selector_runners=selector_runners)
+    # run_experiment("Lymphoma 150", *lymphoma, k=150, selector_runners=selector_runners)
+    # run_experiment("Lymphoma 200", *lymphoma, k=200, selector_runners=selector_runners)
+    # exit()
 
-    levels = [10, 50, 100, 500, 1000, 5000]
-    res = run_varying_noise(levels=levels, selector_runners=selector_runners)
-    with open("result/run_varying_noise.json", "w") as f:
-        json.dump(res, f, indent=2)
+    # lymphoma = load_mat_dataset("data/BASEHOCK.mat")
+    # run_experiment("Lymphoma 50", *lymphoma, k=50, selector_runners=selector_runners)
+    # run_experiment("Lymphoma 100", *lymphoma, k=100, selector_runners=selector_runners)
+    # run_experiment("Lymphoma 150", *lymphoma, k=150, selector_runners=selector_runners)
+    # run_experiment("Lymphoma 200", *lymphoma, k=200, selector_runners=selector_runners)
+    # exit()
+
+    # madelon = load_madelon()
+    # run_experiment("Madelon 50", *madelon, k=50, selector_runners=selector_runners)
+    # run_experiment("Madelon 100", *madelon, k=100, selector_runners=selector_runners)
+    # run_experiment("Madelon 150", *madelon, k=150, selector_runners=selector_runners)
+    # run_experiment("Madelon 200", *madelon, k=200, selector_runners=selector_runners)
+    # exit()
+
+    #levels = [10, 50, 100, 500, 1000, 5000]
+    #res = run_varying_noise(levels=levels, selector_runners=selector_runners)
+    #with open("result/run_varying_noise.json", "w") as f:
+    #    json.dump(res, f, indent=2)
 
     mnist = load_mnist()
     run_experiment("MNIST 50", *mnist, k=50, selector_runners=selector_runners)

@@ -2,7 +2,7 @@ from typing import Any
 
 import numpy as np
 import torch
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler, LabelEncoder
 from tqdm import tqdm
 
 
@@ -52,19 +52,39 @@ class TorchBlessing:
             raise Exception("Incompatible input")
         return X.float()
 
-    def fit(self, X: np.ndarray):
+    def _ensure_long_tensor(self, X: Any) -> torch.FloatTensor:
+        if isinstance(X, np.ndarray):
+            X = torch.from_numpy(X)
+        elif isinstance(X, pd.DataFrame):
+            X = torch.from_numpy(X.values)
+        else:
+            raise Exception("Incompatible input")
+        return X.long()
+
+    def fit(self, X: np.ndarray, y: np.ndarray=None):
         if self.scale_input:
             X = MinMaxScaler().fit_transform(X)
 
         self.ae = Autoencoder(n_feat=X.shape[1], k=self.k)
         X = self._ensure_float_tensor(X)
+        if y is not None:
+            n_class = len(set(y))
+            y = LabelEncoder().fit_transform(y)
+            y = self._ensure_long_tensor(y)
+            clf = torch.nn.Linear(self.k, n_class)
+            ce = torch.nn.CrossEntropyLoss()
+            sm = torch.nn.Softmax(1)
 
         mse = torch.nn.MSELoss()
-        opt = torch.optim.Adam(self.ae.parameters())
-        for i in tqdm(range(self.max_iter)):
+        opt = torch.optim.Adam(list(self.ae.parameters()) + [], lr=0.001)
+        for i in range(self.max_iter):
             opt.zero_grad()
             X_hat, z = self.ae(X)
-            loss = mse(X_hat, X)
+            if y is not None:
+                y_hat = sm(clf(z))
+                loss = mse(X_hat, X) + ce(y_hat, y) * 2
+            else:
+                loss = mse(X_hat, X)
             loss.backward()
             opt.step()
         col_mse = ((X_hat.detach().numpy() - X.detach().numpy()) ** 2).mean(0)
