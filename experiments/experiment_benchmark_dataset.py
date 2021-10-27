@@ -12,7 +12,7 @@ from baselinewrapper import *
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
 
-from blessing import Blessing, BlessingPlus
+from blessing import Blessing
 
 
 def dataset_split(X, y):
@@ -77,21 +77,21 @@ def run_one_mat_dataset(
 if __name__ == "__main__":
     np.random.seed(42)  # for consistent result across machine ¯\_(ツ)_/¯
 
-    # df_madelon = run_one_mat_dataset(
-    #     "Madelon",
-    #     "data/madelon.mat",
-    #     [Blessing, BlessingPlus, SPECSelector, LapScoreSelector, MCFSSelector],
-    #     [50, 100, 150, 200],
-    # )
-    # print(df_madelon)
+    df_madelon = run_one_mat_dataset(
+        "Madelon",
+        "data/madelon.mat",
+        [Blessing, SPECSelector, LapScoreSelector, MCFSSelector],
+        [50, 100, 150, 200],
+    )
+    print(df_madelon)
 
-    # df_lyphoma = run_one_mat_dataset(
-    #     "Lymphoma",
-    #     "data/lymphoma.mat",
-    #     [Blessing, SPECSelector, LapScoreSelector, MCFSSelector],
-    #     [50, 100, 150, 200],
-    # )
-    # print(df_lyphoma)
+    df_lyphoma = run_one_mat_dataset(
+        "Lymphoma",
+        "data/lymphoma.mat",
+        [Blessing, SPECSelector, LapScoreSelector, MCFSSelector],
+        [50, 100, 150, 200],
+    )
+    print(df_lyphoma)
 
     df_basehock = run_one_mat_dataset(
         "Basehock",
@@ -100,3 +100,7 @@ if __name__ == "__main__":
         [50, 100, 150, 200],
     )
     print(df_basehock)
+
+    df_madelon.to_pickle("result_madelon.pkl")
+    df_lyphoma.to_pickle("result_lyphoma.pkl")
+    df_basehock.to_pickle("result_basehock.pkl")
