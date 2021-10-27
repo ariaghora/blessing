@@ -10,12 +10,12 @@ class Blessing:
         self.max_iter = max_iter
         self.scale_input = scale_input
 
-        self.hidden_layer_sizes = (40, self.k, 40)
+        self.hidden_layer_sizes = (100, 50, 100)
         self.ae: BaseEstimator = None
         self.column_scores: np.ndarray = None
         self.chosen_column_idx: np.ndarray = None
 
-    def fit(self, X: np.ndarray, n_refine: int = 3):
+    def fit(self, X: np.ndarray, y=None, n_refine: int = 3):
         """'Nudge' the values of constant columns"""
         X = X + (
             np.random.randn(*X.shape) * 10 ** (np.ceil(np.log10(np.abs(X) + 1e-8)) - 2)
@@ -26,7 +26,6 @@ class Blessing:
         self.ae = MLPRegressor(
             hidden_layer_sizes=self.hidden_layer_sizes,
             max_iter=self.max_iter,
-            activation="identity",
         )
 
         self.ae.fit(X, X)
@@ -48,3 +47,12 @@ class Blessing:
 
     def transform(self, X: np.ndarray):
         return X[:, self.chosen_column_idx]
+
+
+class BlessingPlus(Blessing):
+    def fit(self, X: np.ndarray, y: np.ndarray, n_refine=3):
+        super().fit(X, y, n_refine)
+        from sklearn.feature_selection import SelectKBest
+        kbest_selector = SelectKBest(self.k).fit(X, y)
+        kbest_scores = kbest_selector.scores_
+        print(kbest_scores)
