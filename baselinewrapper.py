@@ -19,6 +19,9 @@ class BaseBaselineSelector:
     def transform(self, X):
         return X[:, self.idx[: self.k]]
 
+    def select_k(self, k):
+        return X[:, self.idx[: k]]
+
 
 class BorutaSelector(BaseBaselineSelector):
     def __init__(self, k):
@@ -40,7 +43,7 @@ class SPECSelector(BaseBaselineSelector):
         self.style = style
         self.scores = None
 
-    def fit(self, X):
+    def fit(self, X, y):
         self.scores = SPEC.spec(X, style=self.style)
         self.idx = SPEC.feature_ranking(self.scores, style=self.style)
         return self
@@ -63,7 +66,7 @@ class MCFSSelector(BaseBaselineSelector):
         super().__init__(k)
         self.weights = None
 
-    def fit(self, X):
+    def fit(self, X, y):
         kwargs = {
             "metric": "euclidean",
             "neighborMode": "knn",
@@ -82,7 +85,7 @@ class LapScoreSelector(BaseBaselineSelector):
         super().__init__(k)
         self.weights = None
 
-    def fit(self, X):
+    def fit(self, X, y):
         kwargs_W = {
             "metric": "euclidean",
             "neighbor_mode": "knn",
