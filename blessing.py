@@ -1,97 +1,65 @@
-from typing import Any
-
 import numpy as np
-import torch
-from sklearn.preprocessing import MinMaxScaler, LabelEncoder
-from tqdm import tqdm
+from sklearn.base import BaseEstimator
+from sklearn.neural_network import MLPRegressor
+from sklearn.preprocessing import MinMaxScaler
 
 
-class Autoencoder(torch.nn.Module):
-    def __init__(self, n_feat: int, k: int):
-        super().__init__()
-        self.enc1 = torch.nn.Linear(n_feat, 20)
-        self.enc2 = torch.nn.Linear(20, k)
-        self.dec1 = torch.nn.Linear(k, 20)
-        self.dec2 = torch.nn.Linear(20, n_feat)
-        self.lrelu = torch.nn.LeakyReLU()
-        self.enc_seq = [self.enc1, self.lrelu, self.enc2, self.lrelu]
-        self.dec_seq = [self.dec1, self.lrelu, self.dec2]
-
-    def forward(self, X: torch.Tensor):
-        z = X
-        for f in self.enc_seq:
-            z = f(z)
-        X_hat = z
-        for f in self.dec_seq:
-            X_hat = f(X_hat)
-        return X_hat, z
-
-
-class TorchBlessing:
-    def __init__(
-        self,
-        k: int,
-        max_iter: int = 200,
-        scale_input: bool = True,
-        verbose: bool = True,
-    ):
+class Blessing:
+    def __init__(self, k: int, max_iter: int = 200, scale_input: bool = True):
         self.k = k
         self.max_iter = max_iter
         self.scale_input = scale_input
-        self.verbose = verbose
-        self.ae: Autoencoder = None
+
+        self.hidden_layer_sizes = (100, 50, 100)
+        self.ae: BaseEstimator = None
         self.column_scores: np.ndarray = None
         self.chosen_column_idx: np.ndarray = None
 
-    def _ensure_float_tensor(self, X: Any) -> torch.FloatTensor:
-        if isinstance(X, np.ndarray):
-            X = torch.from_numpy(X)
-        elif isinstance(X, pd.DataFrame):
-            X = torch.from_numpy(X.values)
-        else:
-            raise Exception("Incompatible input")
-        return X.float()
-
-    def _ensure_long_tensor(self, X: Any) -> torch.FloatTensor:
-        if isinstance(X, np.ndarray):
-            X = torch.from_numpy(X)
-        elif isinstance(X, pd.DataFrame):
-            X = torch.from_numpy(X.values)
-        else:
-            raise Exception("Incompatible input")
-        return X.long()
-
-    def fit(self, X: np.ndarray, y: np.ndarray=None):
+    def fit(self, X: np.ndarray, y=None, n_refine: int = 3):
+        """'Nudge' the values of constant columns"""
+        X = X + (
+            np.random.randn(*X.shape) * 10 ** (np.ceil(np.log10(np.abs(X) + 1e-8)) - 2)
+        )
         if self.scale_input:
             X = MinMaxScaler().fit_transform(X)
 
-        self.ae = Autoencoder(n_feat=X.shape[1], k=self.k)
-        X = self._ensure_float_tensor(X)
-        if y is not None:
-            n_class = len(set(y))
-            y = LabelEncoder().fit_transform(y)
-            y = self._ensure_long_tensor(y)
-            clf = torch.nn.Linear(self.k, n_class)
-            ce = torch.nn.CrossEntropyLoss()
-            sm = torch.nn.Softmax(1)
+        self.ae = MLPRegressor(
+            hidden_layer_sizes=self.hidden_layer_sizes,
+            max_iter=self.max_iter,
+        )
 
-        mse = torch.nn.MSELoss()
-        opt = torch.optim.Adam(list(self.ae.parameters()) + [], lr=0.001)
-        for i in range(self.max_iter):
-            opt.zero_grad()
-            X_hat, z = self.ae(X)
-            if y is not None:
-                y_hat = sm(clf(z))
-                loss = mse(X_hat, X) + ce(y_hat, y) * 2
-            else:
-                loss = mse(X_hat, X)
-            loss.backward()
-            opt.step()
-        col_mse = ((X_hat.detach().numpy() - X.detach().numpy()) ** 2).mean(0)
-        col_penalty = np.log(X.detach().numpy().var(0) + 1e-8)
+        self.ae.fit(X, X)
+        X_hat = self.ae.predict(X)
+
+        """ Sample outlier removal """
+        row_mse = ((X_hat - X) ** 2).mean(1)
+        mu = row_mse.mean()
+        std = row_mse.std()
+        z = (row_mse - mu) / std
+        if n_refine > 0:
+            return self.fit(X[z <= 3], y, n_refine - 1)
+
+        col_mse = ((X_hat - X) ** 2).mean(0)
+        col_penalty = np.log(X.var(0) + 1e-8)
         self.col_scores = 1 / (col_mse - col_penalty)
         self.chosen_column_idx = np.argsort(self.col_scores)[-self.k :][::-1]
         return self
 
     def transform(self, X: np.ndarray):
         return X[:, self.chosen_column_idx]
+
+
+class BlessingPlus(Blessing):
+    def fit(self, X: np.ndarray, y: np.ndarray, n_refine=0):
+        super().fit(X, y, n_refine)
+        from sklearn.feature_selection import SelectKBest
+
+        kbest_selector = SelectKBest(k=self.k).fit(X, y)
+        kbest_scores = kbest_selector.scores_
+
+        self.col_scores = (
+            ((self.col_scores - self.col_scores.mean()) / self.col_scores.std())
+            + 0.01 * ((kbest_scores - kbest_scores.mean()) / kbest_scores.std())
+        )
+        self.chosen_column_idx = np.argsort(self.col_scores)[-self.k :][::-1]
+        return self

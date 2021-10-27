@@ -1,18 +1,19 @@
 import json
+import sys
 import time
+
+sys.path.append("..")
 
 import numpy as np
 import pandas as pd
 import scipy
+from baselinewrapper import *
+from blessing import Blessing as SKBlessing, BlessingPlus
 from sklearn.datasets import load_iris
 from sklearn.feature_selection import RFE, SelectKBest
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
-
-from baselinewrapper import *
-from blessing import TorchBlessing
-from skblessing import Blessing as SKBlessing
 
 
 def timeit(f):
@@ -53,9 +54,9 @@ def load_mnist():
 
 
 @timeit
-def run_blessing(X_train: np.ndarray, y_train: np.ndarray, k: int):
-    selector = Blessing(k)
-    selector.fit(X_train)
+def run_blessing_plus(X_train: np.ndarray, y_train: np.ndarray, k: int):
+    selector = BlessingPlus(k)
+    selector.fit(X_train, y_train)
     return selector
 
 
@@ -76,7 +77,7 @@ def run_select_k_best(X_train: np.ndarray, y_train: np.ndarray, k: int):
 @timeit
 def run_spec(X_train: np.ndarray, y_train: np.ndarray, k: int):
     selector = SPECSelector(k)
-    selector.fit(X_train)
+    selector.fit(X_train, y_train)
     return selector
 
 
@@ -132,14 +133,14 @@ def run_dlufs(X_train: np.ndarray, y_train: np.ndarray, k: int):
 @timeit
 def run_lapscore(X_train: np.ndarray, y_train: np.ndarray, k: int):
     selector = LapScoreSelector(k)
-    selector.fit(X_train)
+    selector.fit(X_train, y_train)
     return selector
 
 
 @timeit
 def run_mcfs(X_train: np.ndarray, y_train: np.ndarray, k: int):
     selector = MCFSSelector(k)
-    selector.fit(X_train)
+    selector.fit(X_train, y_train)
     return selector
 
 

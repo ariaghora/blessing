@@ -1,33 +1,18 @@
+import sys
 import time
+
+sys.path.append("..")
+
+from typing import List
 
 import numpy as np
 import pandas as pd
 import scipy.io
-
-from typing import List
 from baselinewrapper import *
-from skblessing import Blessing, BlessingPlus
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
 
-
-def timeit(f):
-    def timed(*args, **kw):
-        ts = time.time()
-        result = f(*args, **kw)
-        te = time.time()
-
-        print(f"function '{f.__name__}' took: {te-ts:2.4} sec")
-        return result
-
-    return timed
-
-
-@timeit
-def fit_selector(
-    selector: BaseBaselineSelector, X_train: np.ndarray, X_test: np.ndarray
-) -> BaseBaselineSelector:
-    return selector.fit(X_train, X_test)
+from blessing import Blessing, BlessingPlus
 
 
 def dataset_split(X, y):
@@ -80,6 +65,7 @@ def run_one_mat_dataset(
 
     X_train, X_test, y_train, y_test = load_mat_dataset(dataset_path)
     for i, Selector in enumerate(selectors):
+        print(f"Running {Selector.__name__}...")
         for j, k in enumerate(k_list):
             selector = Selector(k=k).fit(X_train, y_train)
             acc, time = run_classifier(selector, X_train, X_test, y_train, y_test, k)
@@ -91,14 +77,13 @@ def run_one_mat_dataset(
 if __name__ == "__main__":
     np.random.seed(42)  # for consistent result across machine ¯\_(ツ)_/¯
 
-    df_madelon = run_one_mat_dataset(
-        "Madelon",
-        "data/madelon.mat",
-        [BlessingPlus],
-        #[Blessing, BlessingPlus, SPECSelector, LapScoreSelector, MCFSSelector],
-        [50]
-    )
-    print(df_madelon)
+    # df_madelon = run_one_mat_dataset(
+    #     "Madelon",
+    #     "data/madelon.mat",
+    #     [Blessing, BlessingPlus, SPECSelector, LapScoreSelector, MCFSSelector],
+    #     [50, 100, 150, 200],
+    # )
+    # print(df_madelon)
 
     # df_lyphoma = run_one_mat_dataset(
     #     "Lymphoma",
@@ -108,10 +93,10 @@ if __name__ == "__main__":
     # )
     # print(df_lyphoma)
 
-    # df_basehock = run_one_mat_dataset(
-    #     "Basehock",
-    #     "data/BASEHOCK.mat",
-    #     [Blessing, SPECSelector, LapScoreSelector, MCFSSelector],
-    #     [50, 100, 150, 200],
-    # )
-    # print(df_basehock)
+    df_basehock = run_one_mat_dataset(
+        "Basehock",
+        "data/BASEHOCK.mat",
+        [Blessing, SPECSelector, LapScoreSelector, MCFSSelector],
+        [50, 100, 150, 200],
+    )
+    print(df_basehock)
