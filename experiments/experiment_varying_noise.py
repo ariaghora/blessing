@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import scipy
 from baselinewrapper import *
-from blessing import Blessing as SKBlessing, BlessingPlus
+from blessing import Blessing as SKBlessing 
 from sklearn.datasets import load_iris
 from sklearn.feature_selection import RFE, SelectKBest
 from sklearn.model_selection import train_test_split

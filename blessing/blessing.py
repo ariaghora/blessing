@@ -15,7 +15,7 @@ class Blessing:
         self.column_scores: np.ndarray = None
         self.chosen_column_idx: np.ndarray = None
 
-    def fit(self, X: np.ndarray, y=None, n_refine: int = 3):
+    def fit(self, X: np.ndarray, y=None, n_refine: int = 0):
         """'Nudge' the values of constant columns"""
         X = X + (
             np.random.randn(*X.shape) * 10 ** (np.ceil(np.log10(np.abs(X) + 1e-8)) - 2)
