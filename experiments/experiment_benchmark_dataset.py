@@ -81,38 +81,41 @@ if __name__ == "__main__":
         "Lung Cancer",
         "data/SMK_CAN_187.mat",
         [Blessing, SPECSelector, LapScoreSelector, MCFSSelector],
-        [50, 100, 150, 200, 250, 300],
+        [50, 100, 150, 200]
     )
     print(df_lung_cancer)
     df_lung_cancer.to_pickle("result_lung_cancer.pkl")
     exit()
 
-    df_newsgroup = run_one_mat_dataset(
-        "Newsgroup",
-        "data/RELATHE.mat",
-        [Blessing, SPECSelector, LapScoreSelector, MCFSSelector],
-        [50, 100, 150, 200],
-    )
-    print(df_newsgroup)
-    df_newsgroup.to_pickle("result_newsgroup.pkl")
+    #df_newsgroup = run_one_mat_dataset(
+    #    "Newsgroup",
+    #    "data/RELATHE.mat",
+    #    [Blessing, SPECSelector, LapScoreSelector, MCFSSelector],
+    #    [50, 100, 150, 200],
+    #)
+    #print(df_newsgroup)
+    #df_newsgroup.to_pickle("result_newsgroup.pkl")
+    #exit()
 
-    df_madelon = run_one_mat_dataset(
-        "Madelon",
-        "data/madelon.mat",
-        [Blessing, SPECSelector, LapScoreSelector, MCFSSelector],
-        [50, 100, 150, 200],
-    )
-    print(df_madelon)
-    df_madelon.to_pickle("result_madelon.pkl")
+    #df_madelon = run_one_mat_dataset(
+    #    "Madelon",
+    #    "data/madelon.mat",
+    #    [Blessing, SPECSelector, LapScoreSelector, MCFSSelector],
+    #    [50, 100, 150, 200],
+    #)
+    #print(df_madelon)
+    #df_madelon.to_pickle("result_madelon.pkl")
+    #exit()
 
-    df_lyphoma = run_one_mat_dataset(
-        "Lymphoma",
-        "data/lymphoma.mat",
-        [Blessing, SPECSelector, LapScoreSelector, MCFSSelector],
-        [50, 100, 150, 200],
-    )
-    print(df_lyphoma)
-    df_lyphoma.to_pickle("result_lyphoma.pkl")
+    #df_lyphoma = run_one_mat_dataset(
+    #    "Lymphoma",
+    #    "data/lymphoma.mat",
+    #    [Blessing, SPECSelector, LapScoreSelector, MCFSSelector],
+    #    [50, 100, 150, 200],
+    #)
+    #print(df_lyphoma)
+    #df_lyphoma.to_pickle("result_lyphoma.pkl")
+    #exit()
 
     df_basehock = run_one_mat_dataset(
         "Basehock",
